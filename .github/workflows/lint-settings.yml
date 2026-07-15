@@ -1,0 +1,37 @@
+name: Lint Claude settings
+
+on:
+  push:
+    paths:
+      - '.claude/**.json'
+      - '.github/workflows/lint-settings.yml'
+  pull_request:
+    paths:
+      - '.claude/**.json'
+      - '.github/workflows/lint-settings.yml'
+
+jobs:
+  validate-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate .claude JSON files
+        run: |
+          shopt -s globstar nullglob
+          files=(.claude/**/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No .claude JSON files found to validate."
+            exit 0
+          fi
+          status=0
+          for f in "${files[@]}"; do
+            if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"; then
+              echo "valid: $f"
+            else
+              echo "INVALID: $f"
+              status=1
+            fi
+          done
+          exit $status
